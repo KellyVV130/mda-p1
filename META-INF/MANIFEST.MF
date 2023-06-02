@@ -28,11 +28,20 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.gmf.runtime.diagram.ui.render,
  org.eclipse.gmf.runtime.diagram.core,
  org.eclipse.emf.common.ui,
- org.eclipse.papyrus.infra.ui;bundle-version="3.4.0"
+ org.eclipse.papyrus.infra.ui;bundle-version="3.4.0",
+ org.eclipse.papyrus.infra.onefile,
+ org.eclipse.jface,
+ org.eclipse.swt,
+ org.eclipse.emf.edit.ui,
+ org.obeonetwork.m2doc.genconf.editor,
+ org.eclipse.ocl.pivot;bundle-version="1.17.0",
+ org.eclipse.xtext;bundle-version="2.29.0",
+ org.eclipse.ocl.xtext.completeocl
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: plugin
 Bundle-ActivationPolicy: lazy
 Import-Package: org.eclipse.acceleo.query.runtime;version="5.0.1",
  org.eclipse.emf.validation.internal.modeled,
  org.eclipse.gmf.runtime.diagram.ui.image,
+ org.eclipse.ui.dialogs,
  org.eclipse.ui.model

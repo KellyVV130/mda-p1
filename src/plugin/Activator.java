@@ -1,6 +1,7 @@
 package plugin;
 
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Plugin;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
@@ -89,6 +90,10 @@ public class Activator extends AbstractUIPlugin {
 	public static void debug(String message) {
 		message = "==========="+message+"==============";
 		log(new Status(IStatus.INFO, PLUGIN_ID, message));
-	}	
+	}
+
+	public static String getPluginID() {
+		return PLUGIN_ID;
+	}
 
 }

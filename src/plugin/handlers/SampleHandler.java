@@ -1,27 +1,13 @@
 package plugin.handlers;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import org.eclipse.core.resources.*;
 import org.obeonetwork.m2doc.ide.*;
-import org.eclipse.papyrus.infra.gmfdiag.export.actions.ExportAllDiagramsParameter;
-import org.eclipse.papyrus.infra.gmfdiag.export.engine.ExportAllDiagramsEngine;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.OperationCanceledException;
-import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.jobs.IJobManager;
-import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.acceleo.query.runtime.IQueryEnvironment;
-import org.eclipse.acceleo.query.runtime.IService;
-import org.eclipse.acceleo.query.runtime.ServiceUtils;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -31,18 +17,7 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.emf.ecore.resource.URIConverter;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
-import org.eclipse.ui.IWorkbenchWindow;
-import org.eclipse.ui.handlers.HandlerUtil;
-import org.eclipse.jface.dialogs.InputDialog;
-import org.eclipse.jface.window.Window;
-import org.obeonetwork.m2doc.genconf.GenconfFactory;
-import org.obeonetwork.m2doc.genconf.GenconfPackage;
-import org.obeonetwork.m2doc.genconf.GenconfUtils;
-import org.obeonetwork.m2doc.genconf.Generation;
 import org.obeonetwork.m2doc.generator.DocumentGenerationException;
 import org.obeonetwork.m2doc.parser.DocumentParserException;
 import org.obeonetwork.m2doc.parser.ValidationMessageLevel;
@@ -50,108 +25,57 @@ import org.obeonetwork.m2doc.template.DocumentTemplate;
 import org.obeonetwork.m2doc.util.*;
 
 import plugin.Activator;
+import wizard.ExportAndGenerateWizard;
 
 public class SampleHandler extends AbstractHandler {
 	private String templateName="D:\\papyrus\\CoCoME-doc\\CoCoME-doc";
 	private String modelName = "D:\\papyrus\\CoCoME\\CoCoME.uml";
 	private String modelProjectName = "CoCoME";
 
+	private ExportAndGenerateWizard wizard = null;
+	
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		Activator.debug("handler execution starts.");
-		IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindowChecked(event);
-		InputDialog dialog = new InputDialog(window.getShell(), "选择模板", "选择模板", templateName, null);
-		if(dialog.open()==Window.OK) {
-			try {
-				this.templateName = dialog.getValue();
-				InputDialog dialog2 = new InputDialog(window.getShell(), "选择模型", "选择模型", modelProjectName, null);
-				if(dialog2.open()==Window.OK) {
-					this.modelProjectName = dialog2.getValue();
-					this.modelName = "D:\\papyrus\\"+this.modelProjectName+"\\"+this.modelProjectName+".uml";
-					this.generateImages(event);
-					 this.generateDoc(event);
-				}
-				
-			} catch(IOException ioe) {
-				Activator.log(ioe);
-				System.err.println("there is an io exception.");
-				ioe.printStackTrace();
-			} catch(DocumentParserException dpe) {
-				Activator.log(dpe);
-				System.err.println("there is a parsing exception.");
-				dpe.printStackTrace();
-			} catch(ClassNotFoundException cnfe) {
-				Activator.log(cnfe);
-				System.err.println("there is a missing class exception.");
-				cnfe.printStackTrace();
-			} catch(DocumentGenerationException dge) {
-				Activator.log(dge);
-				System.err.println("there is a generating exception.");
-				dge.printStackTrace();
-			} 
-		}
+//		wizard = new ExportAndGenerateWizard();
+//		WizardDialog dialog = new WizardDialog(getWorkbench().getActiveWorkbenchWindow().getShell(), wizard);
+//        dialog.create();
+//        dialog.open();
+        
+//		IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindowChecked(event);
+//		InputDialog dialog = new InputDialog(window.getShell(), "选择模板", "选择模板", templateName, null);
+//		if(dialog.open()==Window.OK) {
+//			try {
+//				this.templateName = dialog.getValue();
+//				InputDialog dialog2 = new InputDialog(window.getShell(), "选择模型", "选择模型", modelProjectName, null);
+//				if(dialog2.open()==Window.OK) {
+//					this.modelProjectName = dialog2.getValue();
+//					this.modelName = "D:\\papyrus\\"+this.modelProjectName+"\\"+this.modelProjectName+".uml";
+//					this.generateImages(event);
+//					 this.generateDoc(event);
+//				}
+//				
+//			} catch(IOException ioe) {
+//				Activator.log(ioe);
+//				System.err.println("there is an io exception.");
+//				ioe.printStackTrace();
+//			} catch(DocumentParserException dpe) {
+//				Activator.log(dpe);
+//				System.err.println("there is a parsing exception.");
+//				dpe.printStackTrace();
+//			} catch(ClassNotFoundException cnfe) {
+//				Activator.log(cnfe);
+//				System.err.println("there is a missing class exception.");
+//				cnfe.printStackTrace();
+//			} catch(DocumentGenerationException dge) {
+//				Activator.log(dge);
+//				System.err.println("there is a generating exception.");
+//				dge.printStackTrace();
+//			} 
+//		}
 		return null;
 	}
-	
-	public Boolean generateImages(ExecutionEvent event) throws ExecutionException {
-		Activator.debug("enters generateImage().");
-		IWorkspaceRoot myWorkspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
-		IProject modelProject = myWorkspaceRoot.getProject(modelProjectName);
 		
-		if (modelProject.exists() && !modelProject.isOpen()) {
-			try {
-				modelProject.open(null);
-			} catch (CoreException e) {
-				Activator.log(e);
-			}
-			
-		}
-		
-		// code from papyrus
-		// ExportAllDiagramsEngine exportAllDiagrams = new ExportAllDiagramsEngine();
-		ImageGeneration exportAllDiagrams = new ImageGeneration();
-
-		IFile file = modelProject.getFile(modelProjectName+".di");
-		URI diFileUri = URI.createPlatformResourceURI(file.getFullPath().toString(), true);
-		ExportAllDiagramsParameter parameter = new ExportAllDiagramsParameter(diFileUri);
-		// ExportDiagramsPage page = new ExportDiagramsPage(file.getParent());
-		
-		if(parameter != null) {
-			IResource outputDirectory = modelProject;
-			if(outputDirectory.isAccessible()) {
-				parameter.setOutputDirectory(outputDirectory);
-				// parameter.setExportFormat(exportPage.getExporter());
-				// TODO qualifiedName = button.getSelection()
-				parameter.setQualifiedName(true);
-
-				exportAllDiagrams.initialise(parameter);
-				// TODO wait for the pictures generated.
-				IJobManager jobMan = Job.getJobManager(); 
-				exportAllDiagrams.exportDiagramsToImages(null);
-//				Job[] jobList = jobMan.find(null);
-//				for(Job j:jobList) {
-//					Activator.debug("the name of the job is : "+j.getName());
-//					Activator.debug("the group of the job is : "+j.getJobGroup());
-//				}
-//				try {
-//					Activator.debug("generate image job waiting...");
-//					jobMan.join(exportAllDiagrams, null);
-//					Activator.debug("generate image job done.");
-//				} catch (OperationCanceledException | InterruptedException e) {
-//					Activator.log(e);
-//				}
-				Activator.debug("export image ok.");
-			} else {
-				Activator.log(IStatus.ERROR, "export image has occurred an error.");
-				
-			}
-		}
-			
-		Activator.debug("generateImage() exits.");
-		
-		return true;
-	}
-	
 	@SuppressWarnings("deprecation")
 	public Boolean generateDoc(ExecutionEvent event) throws ExecutionException, IOException, 
 	DocumentParserException, ClassNotFoundException, DocumentGenerationException {

@@ -168,9 +168,9 @@ public class SelectFileDialog extends MessageDialog {
      * Creates the file path {@link Composite}.
      * 
      * @param container
-     *            the pasent {@link Composite}
+     *            the parent {@link Composite}
      * @param defaultName
-     *            the fefault file name
+     *            the default file name
      * @return the file path {@link Text}
      */
     protected Text createFilePathComposite(final Composite container, String defaultName) {

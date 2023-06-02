@@ -1,50 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.4"?>
 <plugin>
-
-   <extension
-         point="org.eclipse.ui.commands">
-      <category
-            id="plugin.commands.category"
-            name="Sample Category">
-      </category>
-      <command
-            categoryId="plugin.commands.category"
-            name="指令"
-            id="plugin.commands.sampleCommand">
-      </command>
+	<extension
+         point="org.eclipse.ui.exportWizards">
+      <wizard
+            class="wizard.ExportAndGenerateWizard"
+            icon="icons/sample.png"
+            id="export.wizard"
+            name="导出需求文档">
+         <selection
+               class="org.eclipse.core.resources.IFile"
+               name="*.uml">
+         </selection>
+      </wizard>
    </extension>
-   <extension
-         point="org.eclipse.ui.handlers">
-      <handler
-            class="plugin.handlers.SampleHandler"
-            commandId="plugin.commands.sampleCommand">
-      </handler>
+   
+   <extension point="org.eclipse.ocl.pivot.complete_ocl_registry">
+      <document resource="src/util/ModelConstraints.ocl">
+         <for uri="http://www.eclipse.org/uml2/5.0.0/UML"/>
+      </document>
    </extension>
-   <extension
-         point="org.eclipse.ui.bindings">
-      <key
-            commandId="plugin.commands.sampleCommand"
-            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-            contextId="org.eclipse.ui.contexts.window"
-            sequence="M1+6">
-      </key>
-   </extension>
-   <extension
-         point="org.eclipse.ui.menus">
-      <menuContribution
-            locationURI="menu:org.eclipse.ui.main.menu?after=additions">
-         <menu
-               id="plugin.menus.sampleMenu"
-               label="插件"
-               mnemonic="M">
-            <command
-                  commandId="plugin.commands.sampleCommand"
-                  id="plugin.menus.sampleCommand"
-                  mnemonic="S">
-            </command>
-         </menu>
-      </menuContribution>
-   </extension>
-
 </plugin>

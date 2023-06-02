@@ -1,0 +1,54 @@
+import uml : 'http://www.eclipse.org/uml2/5.0.0/UML#/'
+
+context uml::Model
+
+def: topLevelPackageNames : Set(String) = Set{'Requirements', 'Structure', 'Behavior', 'Types'}
+
+-- get the first child element of p named n
+def: getChildName(p: uml::NamedElement, n:String): uml::Classifier = p.ownedElement->select(c|
+	c.oclAsType(uml::NamedElement).name=n
+)->oclAsType(OrderedSet(uml::Classifier))->at(1)
+
+def: getFirstLayerPackage(m : uml::Model) : Set(uml::Element) = m.ownedElement->select(p|p.oclIsTypeOf(uml::Package))
+
+def: checkPackageSiblings(pkg : uml::Package) : Boolean = 
+pkg.owner.ownedElement->select(p|p<>pkg and not p.oclIsTypeOf(uml::Package))->size() > 0
+
+def: checkRequirementPackage(pkg: uml::Package) : Boolean = pkg<>null and pkg.ownedElement->size()>0 and 
+pkg.ownedElement->forAll(p|
+	if(p.oclIsTypeOf(uml::Package)) then checkPackageSiblings(p.oclAsType(uml::Package)) else true endif
+)
+
+def: getStereotype(a:uml::Element,name: String) : uml::Stereotype = a.getAppliedStereotype(name)
+
+def: getChildBlock(bs: uml::Element):Set(uml::Element) = bs.ownedElement->select(p|
+	getStereotype(p,'SysML::Blocks::Block').name='Block'
+)->oclAsType(Set(uml::Element))
+
+def: getChildBlockSet(bs: Set(uml::Element)):Set(uml::Element) = bs.ownedElement->select(p|
+	getStereotype(p,'SysML::Blocks::Block').name='Block'
+)->oclAsType(Set(uml::Element))
+
+inv TopLevelPackageNaming : topLevelPackageNames->forAll(p|
+	getFirstLayerPackage(self).oclAsType(uml::NamedElement).name->includes(p)
+)
+
+inv RequirementPackageConstraint : getChildName(self,'Requirements')<>null and 
+checkRequirementPackage(getChildName(self,'Requirements').oclAsType(uml::Package)) and
+getChildName(self,'Requirements').ownedElement->forAll(v|
+	if(v.oclIsTypeOf(uml::Class)) then getStereotype(v,'SysML::Requirements::Requirement').name='Requirement' else true endif
+)
+
+inv OneSystemBlock: getChildName(self,'Structure').ownedElement->select(p|
+	getStereotype(p,'SysML::Blocks::Block').name='Block' and p.oclAsType(uml::NamedElement).name='System'
+)->size()=1
+
+inv StructureNoPackage: getChildName(self,'Structure').ownedElement->forAll(p|not p.oclIsTypeOf(uml::Package))
+
+inv TwoLayerOfBlock: getChildBlock(getChildName(self,'Structure'))->size()>0 and
+getChildBlockSet(getChildBlock(getChildName(self,'Structure')))->size()>=0 and
+getChildBlockSet(getChildBlockSet(getChildBlock(getChildName(self,'Structure'))))->size()=0
+
+context uml::Package
+-- TODO if this can run, then delete above same checks.
+inv NoPackageSibling: self.owner.ownedElement->select(p|p<>self and not p.oclIsTypeOf(uml::Package))->size() > 0
