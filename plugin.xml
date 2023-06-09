@@ -7,7 +7,7 @@
             class="wizard.ExportAndGenerateWizard"
             icon="icons/sample.png"
             id="export.wizard"
-            name="导出需求文档">
+            name="导出文档">
          <selection
                class="org.eclipse.core.resources.IFile"
                name="*.uml">
