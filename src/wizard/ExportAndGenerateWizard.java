@@ -61,6 +61,7 @@ import org.obeonetwork.m2doc.generator.DocumentGenerationException;
 
 import plugin.Activator;
 import util.ModelFormatException;
+import util.PicturesChecker;
 import util.UMLModelChecker;
 
 
@@ -93,9 +94,12 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 		Path ipath = new Path("resources");
 		URL url = FileLocator.find(bundle, ipath, null);
 		// clear the template set
-		for (String s:TemplateRegistry.INSTANCE.getTemplates().keySet()) {
-			TemplateRegistry.INSTANCE.unregisterTemplate(s);
+		if(TemplateRegistry.INSTANCE.getTemplates().size()!=4) {
+			for (String s:TemplateRegistry.INSTANCE.getTemplates().keySet()) {
+				TemplateRegistry.INSTANCE.unregisterTemplate(s);
+			}
 		}
+		
 		try {
 			url = FileLocator.toFileURL(url);
 			File files = URIUtil.toFile(URIUtil.toURI(url));
@@ -119,7 +123,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 	 */ // TODO empty selection! IFile Selection?
 	public void init(IWorkbench workbench, IStructuredSelection selection) {
 		
-		registerTemplates();
+		registerTemplates();// TODO do once, only when the eclipse is opened.
 		
 		file = null;
 		
@@ -277,6 +281,14 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                     }
                     container = folder;
                 }
+                IPath picturesPath = new Path(projectName+"/pics");
+                IFolder picturesFolder = ResourcesPlugin.getWorkspace().getRoot().getFolder(picturesPath);
+                if(!picturesFolder.exists()) {
+                	// TODO throw new exception that can pop up.
+                }
+                //TODO new class to check the picturesFolder
+                PicturesChecker pc = new PicturesChecker(picturesFolder);
+                pc.check();
                 URI templateURI = templatePage.getSelectedTemplateURI();
                 if (templateURI != null) {
                     try (InputStream is = URIConverter.INSTANCE.createInputStream(templateURI)) {

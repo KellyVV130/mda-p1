@@ -237,7 +237,7 @@ public class UMLModelChecker {
 				if(val) {// TODO what about other context?
 	        		Activator.debug("ckeck "+name+" : ok.");
 				} else {
-	        		// TODO throw exception
+	        		// throw exception
 	        		Activator.debug("ckeck "+name+" : FAIL!");
 	        		throw new ModelFormatException(0, "ckeck "+name+" : FAIL!");
 				}
