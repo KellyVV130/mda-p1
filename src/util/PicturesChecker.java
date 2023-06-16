@@ -1,7 +1,5 @@
 package util;
 
-import java.io.File;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +8,8 @@ import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+
+import plugin.Activator;
 
 public class PicturesChecker {
 	/**
@@ -69,10 +69,10 @@ public class PicturesChecker {
 		
 		for(IResource ir : this.folder.members())
 		{
-			IPath p = ir.getFullPath();
-			File f = p.toFile();
-			if(f.exists()) {
-				pictures.add(folder.getFile(p));
+			IPath p = ir.getLocation();
+			if(p!=null) {
+				IFile f = folder.getFile(ir.getLocation().toFile().getName());
+				pictures.add(f);
 			}
 		}
 	}
@@ -80,15 +80,17 @@ public class PicturesChecker {
 	/**
 	 * check if all picture files are of <i>PIC_EXTENSION</i>
 	 * @return - the result of comparison.
+	 * @throws PictureNamingException when the picture file extension is wrong
 	 */
-	private boolean checkFileFormat() {
+	private boolean checkFileFormat() throws PictureNamingException {
 		pictureNames = new ArrayList<String>();
 		for(IFile f:this.pictures) {
-			if(f.getFullPath().toFile().isFile()) {
-				if(!f.getFileExtension().toLowerCase().equals(PIC_EXTENSION)) {
-					return false;//TODO throw exception
+			if(f.getLocation().toFile().isFile()) {
+				if(!f.getFileExtension().toLowerCase().equals(PIC_EXTENSION)) {// TODO or upper case? test
+					throw new PictureNamingException("wrong picture file extension: "+
+				f.getFileExtension()+", should be "+PIC_EXTENSION+" .");
 				}else {
-					pictureNames.add(f.getFullPath().removeFileExtension().lastSegment());
+					pictureNames.add(f.getLocation().removeFileExtension().lastSegment());
 				}
 			}
 		}
@@ -98,13 +100,14 @@ public class PicturesChecker {
 	/**
 	 * check if all the picture file prefixes are allowed.
 	 * @return - the result of checking.
+	 * @throws PictureNamingException when prefix is not allowed.
 	 */
-	private boolean checkPrefix() {
+	private boolean checkPrefix() throws PictureNamingException {
 		for(String s:pictureNames) {
 			// regex get prefix of s
 			String pre = s.split(UNDERSCORE)[0];
-			if(!prefixes.contains(pre)) {
-				return false;// TODO exception
+			if(!pre.equals(s)&&!prefixes.contains(pre)) {
+				throw new PictureNamingException("the picture file has illegal prefix "+pre+" .");
 			}
 		}
 		return true;
@@ -114,19 +117,56 @@ public class PicturesChecker {
 	 * check if there is a model requirement diagram.
 	 * @param reqDName - the name of the model requirement diagram.
 	 * @return - the checking result.
+	 * @throws PictureNamingException when miss the model requirement diagram
 	 */
-	private boolean checkRequirementDiagram(String reqDName) {
+	private boolean checkRequirementDiagram(String reqDName) throws PictureNamingException {
 		// this.pictures.contains(new Path(reqDName+DOT+PIC_EXTENSION));
-		return this.pictureNames.contains(reqDName);
+		if(this.pictureNames.contains(reqDName)) {
+			return true;
+		} else {
+			throw new PictureNamingException("missing picture or wrong name: "+reqDName+DOT+PIC_EXTENSION+" .");
+		}
+	}
+	
+	/**
+	 * check if there is a external interfaces diagram.
+	 * @param eIDName - the name of the diagram.
+	 * @return true if ok
+	 * @throws PictureNamingException when the checking result is not ok.
+	 */
+	private boolean checkExternalInterfacesDiagram(String eIDName) throws PictureNamingException {
+		if(this.pictureNames.contains(eIDName)) {
+			return true;
+		} else {
+			throw new PictureNamingException("missing picture or wrong name: "+eIDName+DOT+PIC_EXTENSION+" .");
+		}
+	}
+	
+	/**
+	 * check if there is a top level bdd.
+	 * @param mSDName the bdd name
+	 * @return true if there is.
+	 * @throws PictureNamingException if there is not.
+	 */
+	private boolean checkModelStructureDiagram(String mSDName) throws PictureNamingException {
+		if(this.pictureNames.contains(mSDName)) {
+			return true;
+		} else {
+			throw new PictureNamingException("missing picture or wrong name: "+mSDName+DOT+PIC_EXTENSION+" .");
+		}
 	}
 	
 	/**
 	 * check if the picture files have qualified names.
-	 * @return - checking result.
+	 * @return checking result.
+	 * @throws PictureNamingException when something went wrong.
 	 */
-	public boolean check() {
-		if(checkFileFormat() && checkPrefix()) {
-			return checkRequirementDiagram("req_Requirements");
+	public boolean check() throws PictureNamingException {
+		if(checkFileFormat()) { //  && checkPrefix()
+			checkRequirementDiagram("req_Requirements");
+			checkExternalInterfacesDiagram("bdd_ExternalInterfaces");
+			checkModelStructureDiagram("bdd_ModelStructure");
+			return true;
 		}
 		return false;
 	}

@@ -61,6 +61,7 @@ import org.obeonetwork.m2doc.generator.DocumentGenerationException;
 
 import plugin.Activator;
 import util.ModelFormatException;
+import util.PictureNamingException;
 import util.PicturesChecker;
 import util.UMLModelChecker;
 
@@ -133,7 +134,6 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 			if(file.getFileExtension().equals("uml")) {
 				umlFileUri = URI.createPlatformResourceURI(file.getFullPath().toString(), true);
 			}
-			// TODO make sure the variable map is linked to the selected template.
 		} else {
 			addErrorPage();
 		}
@@ -263,7 +263,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         		resourceSet.createResource(umlFileUri);
         		Resource r = resourceSet.getResource(umlFileUri, true);
                 checker = new UMLModelChecker(resourceSet);
-    			checker.check();
+    			// checker.check();
     			this.variableValue = ((Model) r.getContents().get(0));
             	final IContainer container;
                 IPath containerFullPath=new Path(projectName+"/docs");// TODO check
@@ -286,9 +286,10 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                 if(!picturesFolder.exists()) {
                 	// TODO throw new exception that can pop up.
                 }
-                //TODO new class to check the picturesFolder
+                // new class to check the picturesFolder
                 PicturesChecker pc = new PicturesChecker(picturesFolder);
                 pc.check();
+                checker.check();// TODO debug
                 URI templateURI = templatePage.getSelectedTemplateURI();
                 if (templateURI != null) {
                     try (InputStream is = URIConverter.INSTANCE.createInputStream(templateURI)) {
@@ -319,7 +320,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                     GenconfUtils.generate(generation, M2DocPlugin.getClassProvider(), BasicMonitor.toMonitor(monitor));
                 }
             } catch (IOException | DocumentGenerationException | DocumentParserException 
-            		| ModelFormatException e) {
+            		| ModelFormatException | PictureNamingException e) {
                 status = new Status(IStatus.ERROR, M2docconfEditorPlugin.getPlugin().getSymbolicName(),
                         "M2Doc project " + projectName + " creation failed.", e);
             }
