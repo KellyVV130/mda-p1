@@ -114,45 +114,16 @@ public class PicturesChecker {
 	}
 	
 	/**
-	 * check if there is a model requirement diagram.
-	 * @param reqDName - the name of the model requirement diagram.
+	 * check if there is a specific diagram named DName.
+	 * @param DName - the name of the model requirement diagram.
 	 * @return - the checking result.
 	 * @throws PictureNamingException when miss the model requirement diagram
 	 */
-	private boolean checkRequirementDiagram(String reqDName) throws PictureNamingException {
-		// this.pictures.contains(new Path(reqDName+DOT+PIC_EXTENSION));
-		if(this.pictureNames.contains(reqDName)) {
+	private boolean checkDiagramByName(String DName) throws PictureNamingException {
+		if(this.pictureNames.contains(DName)) {
 			return true;
 		} else {
-			throw new PictureNamingException("missing picture or wrong name: "+reqDName+DOT+PIC_EXTENSION+" .");
-		}
-	}
-	
-	/**
-	 * check if there is a external interfaces diagram.
-	 * @param eIDName - the name of the diagram.
-	 * @return true if ok
-	 * @throws PictureNamingException when the checking result is not ok.
-	 */
-	private boolean checkExternalInterfacesDiagram(String eIDName) throws PictureNamingException {
-		if(this.pictureNames.contains(eIDName)) {
-			return true;
-		} else {
-			throw new PictureNamingException("missing picture or wrong name: "+eIDName+DOT+PIC_EXTENSION+" .");
-		}
-	}
-	
-	/**
-	 * check if there is a top level bdd.
-	 * @param mSDName the bdd name
-	 * @return true if there is.
-	 * @throws PictureNamingException if there is not.
-	 */
-	private boolean checkModelStructureDiagram(String mSDName) throws PictureNamingException {
-		if(this.pictureNames.contains(mSDName)) {
-			return true;
-		} else {
-			throw new PictureNamingException("missing picture or wrong name: "+mSDName+DOT+PIC_EXTENSION+" .");
+			throw new PictureNamingException("missing picture or wrong name: "+DName+DOT+PIC_EXTENSION+" .");
 		}
 	}
 	
@@ -162,10 +133,15 @@ public class PicturesChecker {
 	 * @throws PictureNamingException when something went wrong.
 	 */
 	public boolean check() throws PictureNamingException {
-		if(checkFileFormat()) { //  && checkPrefix()
-			checkRequirementDiagram("req_Requirements");
-			checkExternalInterfacesDiagram("bdd_ExternalInterfaces");
-			checkModelStructureDiagram("bdd_ModelStructure");
+		if(checkFileFormat()) { 
+			// checkPrefix()
+			checkDiagramByName("req_Requirements");
+			checkDiagramByName("bdd_ExternalInterfaces");
+			checkDiagramByName("bdd_ModelStructure");
+			checkDiagramByName("pkg_ModelStructure");
+			checkDiagramByName("bdd_Interfaces");
+			checkDiagramByName("bdd_Types");
+			checkDiagramByName("uc_Actors");
 			return true;
 		}
 		return false;

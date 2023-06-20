@@ -43,8 +43,7 @@ import plugin.Activator;
 public class UMLModelChecker {
 	private ResourceSet rs;
 	private Model r = null;
-	private EPackage ep = null;
-//	private List<String> errorList;
+	//	private List<String> errorList;
 	private List<String> firstLevelPackageRules;
 	private List<String> requirementPackageRules;
 	
@@ -121,17 +120,11 @@ public class UMLModelChecker {
 					throw new ModelFormatException(3, "Requirement包的子元素必须全部是<Package>。");
 				} else {
 					for(EObject j : eObj.eContents()) {
-						// TODO currently no other limitations
 						if(j instanceof Package) {
 							checkPackageSiblings(j, 4, true);
 						} else {
 							checkPackageSiblings(j, 4, false);
 						}
-//						if(j instanceof Element) {
-//							for(Stereotype st : ((Element)j).getAppliedStereotypes()) {
-//								Activator.debug("the stereotype of "+j.toString()+" is "+st.getName());
-//							}
-//						}
 					}
 				}
 			}
@@ -143,26 +136,21 @@ public class UMLModelChecker {
 	
 	boolean checkStructurePackage() throws ModelFormatException {
 		Package stc = null;
-		for(Stereotype st : r.getOwnedStereotypes()) {
-			Activator.debug(st.toString()+"?????"+st.getQualifiedName());
-		}
 		Stereotype BLOCK = r.getOwnedStereotype("SysML::Blocks::Block");
 		
 
 		List<EObject> l= filterElement((List<EObject>)r.eContents(), Package.class);
 		stc = (Package)findModelElementFromFather(l, "Structure", Package.class);
 		if(stc!=null) {
-			int i=0;
 			for (EObject eObj : stc.eContents()) { // TODO other way to get the blocks
 				if( eObj instanceof org.eclipse.uml2.uml.Class) {
 					if(((org.eclipse.uml2.uml.Class)eObj).getAppliedStereotypes().contains(BLOCK)) {
-						Activator.debug(i+"  "+eObj.toString());
+						// Activator.debug(i+"  "+eObj.toString());
 						// TODO check if the block has one layer of child block, and no other block.
-						// TODO check if there is one and one only system block.
+						// check if there is one and one only system block.
 						continue;
 					}
 				}
-				i++;
 			}
 		}
 		return false;
@@ -216,37 +204,38 @@ public class UMLModelChecker {
 				
 			// accumulate the document constraints in constraintMap and print all constraints
 			Map<String, Constraint>constraintMap = new LinkedHashMap<String,Constraint>();
-	    for (TreeIterator<EObject> tit = asResource.getAllContents(); tit.hasNext(); ) {
-		    	EObject next = tit.next();
-		    	if (next instanceof Constraint) {
-			        Constraint constraint = (Constraint)next;
-			        ExpressionInOCL expressionInOCL = null;
-					expressionInOCL = ocl.getSpecification(constraint);
-			        if (expressionInOCL != null) {
-						String name = constraint.getName();
-						if (name != null) {
-							constraintMap.put(name, constraint);
+		    for (TreeIterator<EObject> tit = asResource.getAllContents(); tit.hasNext(); ) {
+			    	EObject next = tit.next();
+			    	if (next instanceof Constraint) {
+				        Constraint constraint = (Constraint)next;
+				        ExpressionInOCL expressionInOCL = null;
+						expressionInOCL = ocl.getSpecification(constraint);
+				        if (expressionInOCL != null) {
+							String name = constraint.getName();
+							if (name != null) {
+								constraintMap.put(name, constraint);
+							}
 						}
+			    	}
+			    }
+		    
+		    if(r!=null) {
+		    	for(String name:constraintMap.keySet()) {
+			    	Constraint eio = constraintMap.get(name);
+					Boolean val = ocl.check(r, eio);
+					if(!val) {
+		        		throw new ModelFormatException(1, "Check "+name+" : FAIL!");
 					}
-		    	}
+			    }
+		    } else {
+		    	throw new ModelFormatException(0, "Read the uml file fail! Maybe it doesn't exist.");
 		    }
 		    
-		    for(String name:constraintMap.keySet()) {
-		    	Constraint eio = constraintMap.get(name);
-				Boolean val = ocl.check(r, eio);
-				if(val) {// TODO what about other context?
-	        		Activator.debug("ckeck "+name+" : ok.");
-				} else {
-	        		// throw exception
-	        		Activator.debug("ckeck "+name+" : FAIL!");
-	        		throw new ModelFormatException(0, "ckeck "+name+" : FAIL!");
-				}
-		    }
+		    
 				    
 		} catch (ParserException | URISyntaxException | IOException e) {
-			// TODO add throw statement
 			ocl.dispose();
-			e.printStackTrace();
+			throw new ModelFormatException(0, "Compling ocl file fail!");
 		}
 		
 		return false;

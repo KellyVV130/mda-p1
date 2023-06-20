@@ -79,9 +79,7 @@ public class TemplateSelectionPage extends WizardPage {
             public void selectionChanged(SelectionChangedEvent event) {
             	selectedTemplateURI = TemplateRegistry.INSTANCE.getTemplates()
             			.get(((IStructuredSelection) event.getSelection()).getFirstElement());
-            	// TODO copy the template to the uml parent folder? and make fileName path.
             	fileName = new Path(getSelectedTemplateURI().toFileString()).toString();
-            	// Activator.debug("in template selection page"+selectedTemplateURI);
                 setPageComplete(selectedTemplateURI != null);
             }
         });

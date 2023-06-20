@@ -41,7 +41,7 @@ topLevelPackageNames->forAll(p|
 
 inv RequirementPackageConstraint : 
 let rPackage:uml::Package = getChildPackage(self,'Requirements') in 
-not rPackage.oclIsInvalid() and rPackage.ownedElement->size()>0 and checkPackageSiblings(rPackage) 
+not rPackage.oclIsInvalid() and rPackage.ownedElement->size()>0
 and checkRequirementPackage(rPackage)
 
 --inv OneSystemBlock: -- change this.

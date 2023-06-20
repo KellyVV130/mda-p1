@@ -5,8 +5,8 @@
          point="org.eclipse.ui.exportWizards">
       <wizard
             class="wizard.ExportAndGenerateWizard"
-            icon="icons/sample.png"
             id="export.wizard"
+            icon="icons/icon.png"
             name="导出文档">
          <selection
                class="org.eclipse.core.resources.IFile"
@@ -16,7 +16,7 @@
    </extension>
    
    <extension point="org.eclipse.ocl.pivot.complete_ocl_registry">
-      <document resource="src/util/ModelConstraints.ocl">
+      <document resource="resources/ModelConstraints.ocl">
          <for uri="http://www.eclipse.org/uml2/5.0.0/UML"/>
       </document>
    </extension>

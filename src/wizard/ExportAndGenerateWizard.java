@@ -1,15 +1,25 @@
 package wizard;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFHeader;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.resources.WorkspaceJob;
 import org.eclipse.core.runtime.CoreException;
@@ -30,24 +40,20 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.URIConverter;
-import org.eclipse.emf.ecore.resource.impl.ResourceImpl;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.Wizard;
+import org.eclipse.osgi.service.urlconversion.URLConverter;
 import org.obeonetwork.m2doc.genconf.Generation;
 import org.obeonetwork.m2doc.genconf.ModelDefinition;
-import org.eclipse.papyrus.infra.gmfdiag.export.actions.ExportAllDiagramsParameter;
 import org.eclipse.papyrus.infra.gmfdiag.export.wizard.ExportDiagramsErrorPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IExportWizard;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.uml2.uml.Model;
 import org.obeonetwork.m2doc.genconf.GenconfPackage;
 import org.obeonetwork.m2doc.genconf.GenconfUtils;
@@ -74,8 +80,6 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 	private IFile file;
 	
 	private TemplateSelectionPage templatePage;
-	
-	private GenerationCreationPage gPage;
     
     private UMLModelChecker checker = null;
     
@@ -99,21 +103,21 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 			for (String s:TemplateRegistry.INSTANCE.getTemplates().keySet()) {
 				TemplateRegistry.INSTANCE.unregisterTemplate(s);
 			}
-		}
 		
-		try {
-			url = FileLocator.toFileURL(url);
-			File files = URIUtil.toFile(URIUtil.toURI(url));
-			if(files.isDirectory()) {
-				for(File f : files.listFiles()) {
-					if(f.isFile()&&(f.getPath().endsWith(".docx")||f.getPath().endsWith(".doc"))) {
-						TemplateRegistry.INSTANCE.registerTemplate(f.getName(), URI.createFileURI(f.getPath()));
+			try {
+				url = FileLocator.toFileURL(url);
+				File files = URIUtil.toFile(URIUtil.toURI(url));
+				if(files.isDirectory()) {
+					for(File f : files.listFiles()) {
+						if(f.isFile()&&(f.getPath().endsWith(".docx")||f.getPath().endsWith(".doc"))) {
+							TemplateRegistry.INSTANCE.registerTemplate(f.getName(), URI.createFileURI(f.getPath()));
+						}
 					}
 				}
+			} catch (IOException | URISyntaxException e) {
+				Activator.log(IStatus.ERROR, "initialize plugin fail.");
+				e.printStackTrace();
 			}
-		} catch (IOException | URISyntaxException e) {
-			Activator.log(IStatus.ERROR, "initialize plugin fail.");
-			e.printStackTrace();
 		}
 	}
 	
@@ -121,10 +125,10 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 	 *
 	 * @param workbench
 	 * @param selection
-	 */ // TODO empty selection! IFile Selection?
+	 */
 	public void init(IWorkbench workbench, IStructuredSelection selection) {
 		
-		registerTemplates();// TODO do once, only when the eclipse is opened.
+		registerTemplates();
 		
 		file = null;
 		
@@ -146,7 +150,6 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 		// addPage(gPage);
 	}
 
-	// TODO has to be changed
 	private void addErrorPage() {
 		pageError = new ExportDiagramsErrorPage();
 		addPage(pageError);
@@ -186,6 +189,11 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
          * The project name.
          */
         private final String projectName;
+        
+        /**
+         * The model uri.
+         */
+        final URI modelURI;
 
         /**
          * The genconf {@link URI}.
@@ -211,22 +219,10 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
          * 
          * @param name
          *            the job name
-         * @param variableValue
-         *            the variable value
-         * @param variableName
-         *            the variable name
-         * @param launchGeneration
-         *            tells if we should launch the generation
          * @param projectName
          *            the project name
          * @param templateName
          *            the template name
-         * @param genconfURI
-         *            the genconf {@link URI}
-         * @param destinationURI
-         *            the result {@link URI}
-         * @param validationURI
-         *            the validation {@link URI}
          */
         private FinishJob(String name, String projectName, String templateName) {
             super(name);
@@ -237,7 +233,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
             
             IPath modelPath = new Path(CommonPlugin.resolve(umlFileUri).toFileString());
             modelPath=modelPath.removeLastSegments(1);
-            final URI modelURI = URI.createPlatformResourceURI(this.projectName+FOLDER_NAME, true);
+            modelURI = URI.createPlatformResourceURI(this.projectName+FOLDER_NAME, true);
             String tName = new Path(this.templateName).removeFileExtension().lastSegment();
             
             this.genconfURI = URI.createPlatformResourceURI(URI.createURI(modelURI.toPlatformString(true)+ 
@@ -247,26 +243,53 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
             this.validationURI = URI.createPlatformResourceURI(URI.createURI(modelURI.toPlatformString(true)+ 
             		tName + "-validation." + M2DocUtils.DOCX_EXTENSION_FILE).resolve(modelURI).path(),true);
         }
+        
+
+        private boolean fixGeneratedDocument(URI uri) throws FileNotFoundException, IOException {
+        	IWorkspace workspace = ResourcesPlugin.getWorkspace();
+        	IWorkspaceRoot workspaceRoot = workspace.getRoot();
+        	IPath filePath = workspaceRoot.getFile(new Path(uri.toPlatformString(true))).getLocation();
+        	File wordFile = filePath.toFile();
+        	// File wordFile = new File("C:\\Users\\wy200\\Desktop\\test.docx");
+        	if(wordFile.exists()) {
+        		XWPFDocument doc = new XWPFDocument(new FileInputStream(wordFile));
+        		List<XWPFParagraph> paragraphList = doc.getParagraphs();
+        		Activator.debug(paragraphList.size()+"");
+                for (XWPFParagraph para : paragraphList) {
+                	if(para.getText().trim().length()>0) {
+                		for (XWPFRun run : para.getRuns()) {
+	                        String text = run.text();
+	                        if(text.trim().length()>0) {
+	                        	Activator.debug("run: "+text);
+		                        text = text.replaceAll("An I/O Problem occured while reading", "GJ");
+		                        // TODO let run to be sentence!
+		                        // does not exist..
+		                        run.setText(text, 0);
+	                        }
+	                        
+	                    }
+                	}
+                }
+                doc.write(new FileOutputStream(wordFile));
+        	}
+        	
+        	return true;
+        }
 
         @Override
         public IStatus runInWorkspace(IProgressMonitor monitor) throws CoreException {
             Status status = new Status(IStatus.OK, M2docconfEditorPlugin.getPlugin().getSymbolicName(),
                     "M2Doc project " + projectName + " created succesfully.");
             
-
-            // TODO create the last segment folder in first segment project, if exists, enter it.
-//            final IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
-//            project.create(monitor);
-//            project.open(monitor);
             try {
         		ResourceSet resourceSet = new ResourceSetImpl();
         		resourceSet.createResource(umlFileUri);
         		Resource r = resourceSet.getResource(umlFileUri, true);
                 checker = new UMLModelChecker(resourceSet);
-    			// checker.check();
+    			checker.check();
     			this.variableValue = ((Model) r.getContents().get(0));
             	final IContainer container;
-                IPath containerFullPath=new Path(projectName+"/docs");// TODO check
+                IPath containerFullPath=new Path(projectName+"/docs");
                 if (containerFullPath.segmentCount() == 1) {
                     container = ResourcesPlugin.getWorkspace().getRoot().getProject(containerFullPath.lastSegment());
                 } else {
@@ -284,12 +307,11 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                 IPath picturesPath = new Path(projectName+"/pics");
                 IFolder picturesFolder = ResourcesPlugin.getWorkspace().getRoot().getFolder(picturesPath);
                 if(!picturesFolder.exists()) {
-                	// TODO throw new exception that can pop up.
+                	throw new ModelFormatException(0,"There should be a folder containing pictures in the "+projectName+" folder!");
                 }
                 // new class to check the picturesFolder
                 PicturesChecker pc = new PicturesChecker(picturesFolder);
                 pc.check();
-                checker.check();// TODO debug
                 URI templateURI = templatePage.getSelectedTemplateURI();
                 if (templateURI != null) {
                     try (InputStream is = URIConverter.INSTANCE.createInputStream(templateURI)) {
@@ -299,7 +321,6 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                         } else if (openConfirmationDialog(tfile)) {
                             tfile.setContents(is, true, true, new NullProgressMonitor());
                         }
-                        // TODO copy pictures in container.
                         templateURI = URI.createPlatformResourceURI(tfile.getFullPath().toString(), true);
                     } catch (IOException e) {
                         status = new Status(IStatus.ERROR, Activator.PLUGIN_ID, "can't open input stream", e);
@@ -310,19 +331,26 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                     }
                 } else {
                     status = new Status(IStatus.ERROR, Activator.PLUGIN_ID,
-                            "Null template URI. Check your extension point.");
+                            "模板文件路径错误。");
                 }
                 
                 // do these things in the container.
                 final Generation generation = createGenconf(genconfURI, destinationURI, validationURI, templateURI,
                         variableName, this.variableValue);
                 if (launchGeneration) {
-                    GenconfUtils.generate(generation, M2DocPlugin.getClassProvider(), BasicMonitor.toMonitor(monitor));
+                    List<URI> generatedUris = GenconfUtils.generate(generation, 
+                    		M2DocPlugin.getClassProvider(), BasicMonitor.toMonitor(monitor));
+                    if(generatedUris.size()>1) {
+                    	// TODO exception happens.
+                    } else {
+                    	// TODO convert emf uri to file or name and send to apache poi, method to modify the generated documents.
+                    	fixGeneratedDocument(generatedUris.get(0));
+                    }
                 }
             } catch (IOException | DocumentGenerationException | DocumentParserException 
             		| ModelFormatException | PictureNamingException e) {
-                status = new Status(IStatus.ERROR, M2docconfEditorPlugin.getPlugin().getSymbolicName(),
-                        "M2Doc project " + projectName + " creation failed.", e);
+                status = new Status(IStatus.ERROR, Activator.PLUGIN_ID,
+                        e.getMessage(), e);
             }
 
             return status;
@@ -419,7 +447,6 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         final int res = openDialogRunnable.getResult();
         return res == SWT.OK || res == SWT.YES;
     }
-
 
 	/**
 	 * @see org.eclipse.jface.wizard.Wizard#performFinish()
