@@ -344,7 +344,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                     	// TODO exception happens.
                     } else {
                     	// TODO convert emf uri to file or name and send to apache poi, method to modify the generated documents.
-                    	fixGeneratedDocument(generatedUris.get(0));
+                    	// fixGeneratedDocument(generatedUris.get(0));
                     }
                 }
             } catch (IOException | DocumentGenerationException | DocumentParserException 
