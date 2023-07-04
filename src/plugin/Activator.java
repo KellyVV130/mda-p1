@@ -1,7 +1,6 @@
 package plugin;
 
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Plugin;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
@@ -12,7 +11,7 @@ import org.osgi.framework.BundleContext;
 public class Activator extends AbstractUIPlugin {
 
 	// The plug-in ID
-	public static final String PLUGIN_ID = "plugin"; //$NON-NLS-1$
+	public static final String PLUGIN_ID = "DocGenerator4UML"; //$NON-NLS-1$
 
 	// The shared instance
 	private static Activator plugin;

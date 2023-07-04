@@ -9,8 +9,6 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 
-import plugin.Activator;
-
 public class PicturesChecker {
 	/**
 	 * picture files container.
@@ -35,7 +33,7 @@ public class PicturesChecker {
 	/**
 	 * the file extension of picture file in lower case.
 	 */
-	private String PIC_EXTENSION="png";
+	private String PIC_EXTENSION="PNG";
 	
 	/**
 	 * the dot.
@@ -86,7 +84,7 @@ public class PicturesChecker {
 		pictureNames = new ArrayList<String>();
 		for(IFile f:this.pictures) {
 			if(f.getLocation().toFile().isFile()) {
-				if(!f.getFileExtension().toLowerCase().equals(PIC_EXTENSION)) {// TODO or upper case? test
+				if(!f.getFileExtension().equals(PIC_EXTENSION)) {// TODO or upper case? test
 					throw new PictureNamingException("wrong picture file extension: "+
 				f.getFileExtension()+", should be "+PIC_EXTENSION+" .");
 				}else {
@@ -123,7 +121,7 @@ public class PicturesChecker {
 		if(this.pictureNames.contains(DName)) {
 			return true;
 		} else {
-			throw new PictureNamingException("missing picture or wrong name: "+DName+DOT+PIC_EXTENSION+" .");
+			throw new PictureNamingException("missing picture or wrong name: "+DName+DOT+PIC_EXTENSION+".");
 		}
 	}
 	

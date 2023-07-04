@@ -7,6 +7,7 @@
             class="wizard.ExportAndGenerateWizard"
             id="export.wizard"
             icon="icons/icon.png"
+            category="DocGenerator4UML"
             name="导出文档">
          <selection
                class="org.eclipse.core.resources.IFile"
@@ -16,8 +17,33 @@
    </extension>
    
    <extension point="org.eclipse.ocl.pivot.complete_ocl_registry">
-      <document resource="resources/ModelConstraints.ocl">
+      <document resource="resources/ModelConstraints4UML.ocl">
          <for uri="http://www.eclipse.org/uml2/5.0.0/UML"/>
       </document>
    </extension>
+   <extension
+         id="product"
+         point="org.eclipse.core.runtime.products">
+      <product
+            application="org.eclipse.ui.ide.workbench"
+            name="DocGenerator4UMLFeatureConf">
+         <property
+               name="appName"
+               value="DocGenerator4UMLFeatureConf">
+         </property>
+      </product>
+   </extension>
+   <extension
+         id="product2"
+         point="org.eclipse.core.runtime.products">
+      <product
+            application="org.eclipse.equinox.p2.publisher.EclipseGenerator"
+            name="DocGenerator4UML">
+         <property
+               name="appName"
+               value="DocGenerator4UML">
+         </property>
+      </product>
+   </extension>
+   
 </plugin>

@@ -11,7 +11,6 @@ import java.net.URL;
 import java.util.List;
 
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFHeader;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.eclipse.core.resources.IContainer;
@@ -44,10 +43,6 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.Wizard;
-import org.eclipse.osgi.service.urlconversion.URLConverter;
-import org.obeonetwork.m2doc.genconf.Generation;
-import org.obeonetwork.m2doc.genconf.ModelDefinition;
-import org.eclipse.papyrus.infra.gmfdiag.export.wizard.ExportDiagramsErrorPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
@@ -57,13 +52,15 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.uml2.uml.Model;
 import org.obeonetwork.m2doc.genconf.GenconfPackage;
 import org.obeonetwork.m2doc.genconf.GenconfUtils;
+import org.obeonetwork.m2doc.genconf.Generation;
+import org.obeonetwork.m2doc.genconf.ModelDefinition;
+import org.obeonetwork.m2doc.genconf.presentation.M2docconfEditorPlugin;
+import org.obeonetwork.m2doc.generator.DocumentGenerationException;
 import org.obeonetwork.m2doc.ide.M2DocPlugin;
 import org.obeonetwork.m2doc.parser.DocumentParserException;
 import org.obeonetwork.m2doc.services.TemplateRegistry;
 import org.obeonetwork.m2doc.util.M2DocUtils;
 import org.osgi.framework.Bundle;
-import org.obeonetwork.m2doc.genconf.presentation.M2docconfEditorPlugin;
-import org.obeonetwork.m2doc.generator.DocumentGenerationException;
 
 import plugin.Activator;
 import util.ModelFormatException;
@@ -73,8 +70,6 @@ import util.UMLModelChecker;
 
 
 public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
-	/** error wizard page shown when the selected file is incorrect. */
-	private ExportDiagramsErrorPage pageError;
 
 	/** Selected file. */
 	private IFile file;
@@ -139,7 +134,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 				umlFileUri = URI.createPlatformResourceURI(file.getFullPath().toString(), true);
 			}
 		} else {
-			addErrorPage();
+			// TODO exception?
 		}
 	}
 	
@@ -148,11 +143,6 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 		addPage(templatePage);
 		// gPage = new GenerationCreationPage(templatePage, variableValue);
 		// addPage(gPage);
-	}
-
-	private void addErrorPage() {
-		pageError = new ExportDiagramsErrorPage();
-		addPage(pageError);
 	}
 
 	/**

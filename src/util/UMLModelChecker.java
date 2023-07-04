@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +19,6 @@ import org.eclipse.emf.common.util.Diagnostic;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EValidator;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -191,6 +191,31 @@ public class UMLModelChecker {
 //			}
 //		}
 		
+		Map<String, String> ConstraintNameMap = new HashMap<String, String>();
+//		ConstraintNameMap.put("TopLevelPackageNaming", 
+//				"There must be 4 packages named 'Requirements', 'Behaviors', 'Types', 'Structure'
+//		at the first level under the Model. Cannot find some of them.");
+		ConstraintNameMap.put("RequirementPackageExists", 
+				"Couldn't find the 'Requirements' package, please check if it is of the right name.");
+		ConstraintNameMap.put("PerformanceRequirementConstraint", 
+				"Couldn't find the PerformanceRequirement element in 'Requirements' package, please check if it is of the right name.");
+		ConstraintNameMap.put("StructurePackageExists", 
+				"Couldn't find the 'Structure' package, please check if it is of the right name.");
+		ConstraintNameMap.put("StructureNoPackage", 
+				"There shouldn't be any packages in 'Structure' package.");
+		ConstraintNameMap.put("TwoLayerOfBlock", 
+				"There should be two layers of Block at most.");
+		ConstraintNameMap.put("BehaviorsPackageExists", 
+				"Couldn't find the 'Behaviors' package, please check if it is of the right name.");
+		ConstraintNameMap.put("ExternalInterfacesExists", 
+				"Couldn't find the ExternalInterfaces package in 'Behaviors' package, please check if it is of the right name.");
+		ConstraintNameMap.put("BehaviorsPackageConstraint", 
+				"The 'Behaviors' pakcage should at least contain one package and no non-package elements.");
+		ConstraintNameMap.put("TypesPackageExists", 
+				"Couldn't find the 'Types' package, please check if it is of the right name.");
+		ConstraintNameMap.put("TypesPackageConstraint", 
+				"There should at least be 1 DataType element and none package elements in 'Types' package.");
+		
 		OCL ocl = OCL.newInstance(rs);
 		try {
 			Bundle bundle = Platform.getBundle(Activator.getPluginID());
@@ -224,7 +249,7 @@ public class UMLModelChecker {
 			    	Constraint eio = constraintMap.get(name);
 					Boolean val = ocl.check(r, eio);
 					if(!val) {
-		        		throw new ModelFormatException(1, "Check "+name+" : FAIL!");
+		        		throw new ModelFormatException(1, ConstraintNameMap.get(name));
 					}
 			    }
 		    } else {
