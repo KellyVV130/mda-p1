@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -200,9 +203,11 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
          */
         private final URI validationURI;
         
-        private final String FOLDER_NAME = "/docs/";
+        private final String FOLDER_NAME = "/temp/";
         
         private final String DOT=".";
+        
+        private final String RESULT_FOLDER = "/docs/";
 
         /**
          * Constructor.
@@ -265,6 +270,61 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         	
         	return true;
         }
+        
+        /**
+         * copy temp/*-result to /docs and rename it without -result, delete temp/*.
+         * @param generatedUris - the generated Uris
+         * @param containerFullPath - the temp path
+         * @return
+         * @throws IOException 
+         */
+        private Boolean moveAndDeleteTemp(List<URI> generatedUris, IPath containerFullPath) throws IOException {
+        	for(URI guri:generatedUris) {
+        		if(guri.toPlatformString(true).contains("result")) {
+        			IWorkspace workspace = ResourcesPlugin.getWorkspace();
+                	IWorkspaceRoot workspaceRoot = workspace.getRoot();
+                	IPath filePath = workspaceRoot.getFile(new Path(guri.toPlatformString(true))).getLocation();
+                	File wordFile = filePath.toFile();
+
+                	String resultString = new Path(wordFile.getAbsolutePath()).removeLastSegments(2).append(RESULT_FOLDER).toString();
+                	String tName = new Path(this.templateName).removeFileExtension().lastSegment();
+                	File resFullName = new File(resultString+wordFile.getName());
+                	if(resFullName.exists()) {
+                		resFullName.delete();
+                		
+                	}
+                	File resHalfName = new File(resultString+tName+".docx");
+            		if(resHalfName.exists()) {
+            			resHalfName.delete();
+            		}
+                	
+                	java.nio.file.Path srcPath = Paths.get(wordFile.getAbsolutePath());
+                	java.nio.file.Path dstPath = Paths.get(resultString+wordFile.getName());
+                	File resDir = new File(resultString);
+                	if(!resDir.exists()||!resDir.isDirectory()) {
+                		resDir.mkdir();
+                	} 
+                	Files.move(srcPath, dstPath);
+                	
+                	File resDoc = new File(resultString+wordFile.getName());
+                	if(resDoc.exists()) {
+                		resDoc.renameTo(new File(resultString+tName+".docx"));
+                	}
+        		} else if(guri.toPlatformString(true).contains("validation")) {
+        			return false;
+        		}
+        	}
+        	
+        	File containerFolder = ResourcesPlugin.getWorkspace().getRoot()
+        			.getFile(new Path(containerFullPath.toString())).getLocation().toFile();
+        	if(containerFolder.exists()&&containerFolder.isDirectory()) {
+        		for(File f:containerFolder.listFiles()) {
+            		f.delete();
+            	}
+        	}
+        	Boolean cf = containerFolder.delete(); 
+        	return true;
+        }
 
         @Override
         public IStatus runInWorkspace(IProgressMonitor monitor) throws CoreException {
@@ -279,7 +339,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
     			checker.check();
     			this.variableValue = ((Model) r.getContents().get(0));
             	final IContainer container;
-                IPath containerFullPath=new Path(projectName+"/docs");
+                IPath containerFullPath=new Path(projectName+"/temp"); // TODO temp
                 if (containerFullPath.segmentCount() == 1) {
                     container = ResourcesPlugin.getWorkspace().getRoot().getProject(containerFullPath.lastSegment());
                 } else {
@@ -331,10 +391,14 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                     List<URI> generatedUris = GenconfUtils.generate(generation, 
                     		M2DocPlugin.getClassProvider(), BasicMonitor.toMonitor(monitor));
                     if(generatedUris.size()>1) {
-                    	// TODO exception happens.
+                    	throw new DocumentGenerationException("There has been unknown error during document generation.");
                     } else {
                     	// TODO convert emf uri to file or name and send to apache poi, method to modify the generated documents.
                     	// fixGeneratedDocument(generatedUris.get(0));
+                    	Boolean flag = moveAndDeleteTemp(generatedUris, containerFullPath);
+                    	if(!flag) {
+                    		throw new DocumentGenerationException("The validation run fails. Please check template file.");
+                    	}
                     }
                 }
             } catch (IOException | DocumentGenerationException | DocumentParserException 
@@ -376,6 +440,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 
         return res;
     }
+    
     /**
      * Open {@link MessageBox}.
      * 

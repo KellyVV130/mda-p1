@@ -132,7 +132,7 @@ public class PicturesChecker {
 	 */
 	public boolean check() throws PictureNamingException {
 		if(checkFileFormat()) { 
-			// checkPrefix()
+			// checkPrefix();
 			checkDiagramByName("req_Requirements");
 			checkDiagramByName("bdd_ExternalInterfaces");
 			checkDiagramByName("bdd_ModelStructure");
