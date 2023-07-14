@@ -1,27 +1,19 @@
 package wizard;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
-import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IWorkspace;
-import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.resources.WorkspaceJob;
 import org.eclipse.core.runtime.CoreException;
@@ -64,7 +56,6 @@ import org.obeonetwork.m2doc.parser.DocumentParserException;
 import org.obeonetwork.m2doc.services.TemplateRegistry;
 import org.obeonetwork.m2doc.util.M2DocUtils;
 import org.osgi.framework.Bundle;
-
 import plugin.Activator;
 import util.ModelFormatException;
 import util.PictureNamingException;
@@ -209,6 +200,8 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         
         private final String RESULT_FOLDER = "/docs/";
 
+		private boolean check;
+
         /**
          * Constructor.
          * 
@@ -240,10 +233,8 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         }
         
 
-        private boolean fixGeneratedDocument(URI uri) throws FileNotFoundException, IOException {
-        	IWorkspace workspace = ResourcesPlugin.getWorkspace();
-        	IWorkspaceRoot workspaceRoot = workspace.getRoot();
-        	IPath filePath = workspaceRoot.getFile(new Path(uri.toPlatformString(true))).getLocation();
+        /*private boolean fixGeneratedDocument(URI uri) throws FileNotFoundException, IOException {
+        	IPath filePath = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(uri.toPlatformString(true))).getLocation();
         	File wordFile = filePath.toFile();
         	// File wordFile = new File("C:\\Users\\wy200\\Desktop\\test.docx");
         	if(wordFile.exists()) {
@@ -269,7 +260,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         	}
         	
         	return true;
-        }
+        }*/
         
         /**
          * copy temp/*-result to /docs and rename it without -result, delete temp/*.
@@ -281,9 +272,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         private Boolean moveAndDeleteTemp(List<URI> generatedUris, IPath containerFullPath) throws IOException {
         	for(URI guri:generatedUris) {
         		if(guri.toPlatformString(true).contains("result")) {
-        			IWorkspace workspace = ResourcesPlugin.getWorkspace();
-                	IWorkspaceRoot workspaceRoot = workspace.getRoot();
-                	IPath filePath = workspaceRoot.getFile(new Path(guri.toPlatformString(true))).getLocation();
+                	IPath filePath = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(guri.toPlatformString(true))).getLocation();
                 	File wordFile = filePath.toFile();
 
                 	String resultString = new Path(wordFile.getAbsolutePath()).removeLastSegments(2).append(RESULT_FOLDER).toString();
@@ -327,7 +316,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         }
 
         @Override
-        public IStatus runInWorkspace(IProgressMonitor monitor) throws CoreException {
+        public IStatus runInWorkspace(IProgressMonitor monitor) {
             Status status = new Status(IStatus.OK, M2docconfEditorPlugin.getPlugin().getSymbolicName(),
                     "M2Doc project " + projectName + " created succesfully.");
             
@@ -396,13 +385,15 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                     	// TODO convert emf uri to file or name and send to apache poi, method to modify the generated documents.
                     	// fixGeneratedDocument(generatedUris.get(0));
                     	Boolean flag = moveAndDeleteTemp(generatedUris, containerFullPath);
+                    	// refresh workspace
+                    	ResourcesPlugin.getWorkspace().getRoot().getProject(this.projectName).refreshLocal(IResource.DEPTH_ONE, monitor);
                     	if(!flag) {
                     		throw new DocumentGenerationException("The validation run fails. Please check template file.");
                     	}
                     }
                 }
             } catch (IOException | DocumentGenerationException | DocumentParserException 
-            		| ModelFormatException | PictureNamingException e) {
+            		| ModelFormatException | PictureNamingException | CoreException e) {
                 status = new Status(IStatus.ERROR, Activator.PLUGIN_ID,
                         e.getMessage(), e);
             }

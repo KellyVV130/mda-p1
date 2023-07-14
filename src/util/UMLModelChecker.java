@@ -30,6 +30,7 @@ import org.eclipse.ocl.pivot.ExpressionInOCL;
 import org.eclipse.ocl.pivot.internal.labels.LabelSubstitutionLabelProvider;
 import org.eclipse.ocl.pivot.utilities.OCL;
 import org.eclipse.ocl.pivot.utilities.ParserException;
+import org.eclipse.ocl.xtext.completeocl.CompleteOCLStandaloneSetup;
 import org.eclipse.uml2.uml.Model;
 import org.eclipse.uml2.uml.NamedElement;
 import org.eclipse.uml2.uml.Package;
@@ -215,6 +216,8 @@ public class UMLModelChecker {
 				"Couldn't find the 'Types' package, please check if it is of the right name.");
 		ConstraintNameMap.put("TypesPackageConstraint", 
 				"There should at least be 1 DataType element and none package elements in 'Types' package.");
+		
+		CompleteOCLStandaloneSetup.doSetup();
 		
 		OCL ocl = OCL.newInstance(rs);
 		try {

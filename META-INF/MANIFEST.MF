@@ -2,26 +2,17 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: DocGenerator4UML
 Bundle-SymbolicName: DocGenerator4UML;singleton:=true
-Bundle-Version: 1.0.6.beta
+Bundle-Version: 1.0.12.beta
 Bundle-Activator: plugin.Activator
-Require-Bundle: org.eclipse.ui;bundle-version="3.201.200",
- org.eclipse.core.runtime;bundle-version="3.26.100",
- org.eclipse.emf.ecore;bundle-version="2.29.0",
+Require-Bundle: org.eclipse.core.runtime;bundle-version="3.26.100",
  org.obeonetwork.m2doc.genconf;bundle-version="3.2.2",
- org.apache.poi,
- org.eclipse.core.resources;bundle-version="3.16.100",
- org.eclipse.gmf;bundle-version="1.14.1",
  org.eclipse.uml2.uml;bundle-version="5.5.0",
  org.obeonetwork.m2doc.ide;bundle-version="3.2.2",
- org.eclipse.emf.common.ui,
- org.eclipse.jface,
- org.eclipse.swt,
- org.eclipse.emf.edit.ui,
  org.obeonetwork.m2doc.genconf.editor,
- org.eclipse.ocl.pivot;bundle-version="1.17.0",
- org.eclipse.xtext;bundle-version="2.29.0",
  org.eclipse.ocl.xtext.completeocl,
- org.obeonetwork.m2doc;bundle-version="3.2.2"
+ org.obeonetwork.m2doc;bundle-version="3.2.2",
+ org.eclipse.sirius,
+ org.eclipse.papyrus.sysml16;bundle-version="2.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8,
  JavaSE-10,
  JavaSE-11,
@@ -36,8 +27,3 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8,
  JavaSE-9
 Automatic-Module-Name: plugin
 Bundle-ActivationPolicy: lazy
-Import-Package: org.eclipse.acceleo.query.runtime;version="5.0.1",
- org.eclipse.emf.validation.internal.modeled,
- org.eclipse.gmf.runtime.diagram.ui.image,
- org.eclipse.ui.dialogs,
- org.eclipse.ui.model

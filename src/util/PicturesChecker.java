@@ -51,7 +51,7 @@ public class PicturesChecker {
 	 * Should be in the same folder of the uml file
 	 * @throws CoreException
 	 */
-	public PicturesChecker(IFolder picturesFolder) throws CoreException {
+	public PicturesChecker(IFolder picturesFolder) {
 		this.folder = picturesFolder;
 		pictures = new ArrayList<IFile>();
 		prefixes = new ArrayList<String>();
@@ -65,13 +65,18 @@ public class PicturesChecker {
 		prefixes.add("par");
 		prefixes.add("pkg");
 		
-		for(IResource ir : this.folder.members())
-		{
-			IPath p = ir.getLocation();
-			if(p!=null) {
-				IFile f = folder.getFile(ir.getLocation().toFile().getName());
-				pictures.add(f);
+		try {
+			for(IResource ir : this.folder.members())
+			{
+				IPath p = ir.getLocation();
+				if(p!=null) {
+					IFile f = folder.getFile(ir.getLocation().toFile().getName());
+					pictures.add(f);
+				}
 			}
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	
