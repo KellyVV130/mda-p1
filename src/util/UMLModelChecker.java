@@ -216,6 +216,10 @@ public class UMLModelChecker {
 				"Couldn't find the 'Types' package, please check if it is of the right name.");
 		ConstraintNameMap.put("TypesPackageConstraint", 
 				"There should at least be 1 DataType element and none package elements in 'Types' package.");
+		ConstraintNameMap.put("ConstantsPackageExists", 
+				"Couldn't find the 'Constants' package, please check if it is of the right name.");
+		ConstraintNameMap.put("ConstantsPackageConstraint", 
+				"There should at least be 1 DataType element and none package elements in 'Constants' package.");
 		
 		CompleteOCLStandaloneSetup.doSetup();
 		

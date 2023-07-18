@@ -85,3 +85,11 @@ inv TypesPackageConstraint:
 let pkg:uml::Package = getChildPackage(self,'Types') in
 not pkg.oclIsInvalid() and pkg.ownedElement->selectByKind(uml::DataType)->size()>0 and
 pkg.ownedElement->selectByKind(uml::Package)->size()=0
+
+inv ConstantsPackageExists:
+not getChildPackage(self, 'Constants').oclIsInvalid()
+
+inv ConstantsPackageConstraint:
+let pkg:uml::Package = getChildPackage(self,'Constants') in
+not pkg.oclIsInvalid() and pkg.ownedElement->selectByKind(uml::DataType)->size()>0 and
+pkg.ownedElement->selectByKind(uml::Package)->size()=0
