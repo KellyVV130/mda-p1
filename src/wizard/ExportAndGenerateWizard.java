@@ -104,7 +104,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 					}
 				}
 			} catch (IOException | URISyntaxException e) {
-				Activator.log(IStatus.ERROR, "initialize plugin fail.");
+				Activator.log(IStatus.ERROR, "初始化插件失败。");
 				e.printStackTrace();
 			}
 		}
@@ -200,9 +200,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         
         private final String RESULT_FOLDER = "/docs/";
 
-		private boolean check;
-
-        /**
+		/**
          * Constructor.
          * 
          * @param name
@@ -311,21 +309,20 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
             		f.delete();
             	}
         	}
-        	Boolean cf = containerFolder.delete(); 
+        	containerFolder.delete(); 
         	return true;
         }
 
         @Override
         public IStatus runInWorkspace(IProgressMonitor monitor) {
             Status status = new Status(IStatus.OK, M2docconfEditorPlugin.getPlugin().getSymbolicName(),
-                    "M2Doc project " + projectName + " created succesfully.");
+                    "M2Doc工程" + projectName + "成功创建。");
             
             try {
         		ResourceSet resourceSet = new ResourceSetImpl();
         		resourceSet.createResource(umlFileUri);
         		Resource r = resourceSet.getResource(umlFileUri, true);
-                checker = new UMLModelChecker(resourceSet);
-    			checker.check();
+                
     			this.variableValue = ((Model) r.getContents().get(0));
             	final IContainer container;
                 IPath containerFullPath=new Path(projectName+"/temp"); // TODO temp
@@ -343,14 +340,6 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                     }
                     container = folder;
                 }
-                IPath picturesPath = new Path(projectName+"/pics");
-                IFolder picturesFolder = ResourcesPlugin.getWorkspace().getRoot().getFolder(picturesPath);
-                if(!picturesFolder.exists()) {
-                	throw new ModelFormatException(0,"There should be a folder containing pictures in the "+projectName+" folder!");
-                }
-                // new class to check the picturesFolder
-                PicturesChecker pc = new PicturesChecker(picturesFolder);
-                pc.check();
                 URI templateURI = templatePage.getSelectedTemplateURI();
                 if (templateURI != null) {
                     try (InputStream is = URIConverter.INSTANCE.createInputStream(templateURI)) {
@@ -362,10 +351,10 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                         }
                         templateURI = URI.createPlatformResourceURI(tfile.getFullPath().toString(), true);
                     } catch (IOException e) {
-                        status = new Status(IStatus.ERROR, Activator.PLUGIN_ID, "can't open input stream", e);
+                        status = new Status(IStatus.ERROR, Activator.PLUGIN_ID, "无法打开输入流。", e);
                         Activator.getDefault().getLog().log(status);
                     } catch (CoreException e) {
-                        status = new Status(IStatus.ERROR, Activator.PLUGIN_ID, "can't save file", e);
+                        status = new Status(IStatus.ERROR, Activator.PLUGIN_ID, "无法保存文件。", e);
                         Activator.getDefault().getLog().log(status);
                     }
                 } else {
@@ -380,20 +369,22 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                     List<URI> generatedUris = GenconfUtils.generate(generation, 
                     		M2DocPlugin.getClassProvider(), BasicMonitor.toMonitor(monitor));
                     if(generatedUris.size()>1) {
-                    	throw new DocumentGenerationException("There has been unknown error during document generation.");
+                    	throw new DocumentGenerationException("文档生成过程中发生未知错误。");
                     } else {
-                    	// TODO convert emf uri to file or name and send to apache poi, method to modify the generated documents.
+                    	// TODO method to modify the generated documents.
                     	// fixGeneratedDocument(generatedUris.get(0));
                     	Boolean flag = moveAndDeleteTemp(generatedUris, containerFullPath);
-                    	// refresh workspace
-                    	ResourcesPlugin.getWorkspace().getRoot().getProject(this.projectName).refreshLocal(IResource.DEPTH_ONE, monitor);
                     	if(!flag) {
-                    		throw new DocumentGenerationException("The validation run fails. Please check template file.");
+                    		throw new DocumentGenerationException("模板文件验证失败，请检查模板文件。");
                     	}
                     }
+                 // refresh workspace
+            	ResourcesPlugin.getWorkspace().getRoot().getProject(this.projectName)
+            	.refreshLocal(IResource.DEPTH_INFINITE, monitor);
                 }
             } catch (IOException | DocumentGenerationException | DocumentParserException 
-            		| ModelFormatException | PictureNamingException | CoreException e) {
+            		| CoreException e) {
+            	// TODO delete temp folder
                 status = new Status(IStatus.ERROR, Activator.PLUGIN_ID,
                         e.getMessage(), e);
             }
@@ -407,7 +398,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         final Generation res;
 
         final ResourceSet resourceSet = new ResourceSetImpl();
-        final Resource resource;
+        final Resource resource; // genconf file resource
         if (resourceSet.getURIConverter().exists(genconfURI, null)) {
             resource = resourceSet.getResource(genconfURI, true);
         } else {
@@ -463,8 +454,8 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         public void run() {
             final MessageBox dialog = new MessageBox(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
                     SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
-            dialog.setText(fileName + " already exists");
-            dialog.setMessage("Do you want to overrite it?");
+            dialog.setText(fileName + "已经存在，");
+            dialog.setMessage("您想覆盖其中内容吗？");
             result = dialog.open();
         }
 
@@ -503,8 +494,34 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 	public boolean performFinish() {
 		final String projectName = file.getParent().getName();
         final String templateName = templatePage.getTemplateName();
+        
+        
+		try {
+			ResourceSet resourceSet = new ResourceSetImpl();
+			resourceSet.createResource(umlFileUri);
+			resourceSet.getResource(umlFileUri, true);
+	        checker = new UMLModelChecker(resourceSet);
+			checker.check();
+		} catch (ModelFormatException e) {
+			// TODO Auto-generated catch block, should be status message or such.
+			e.printStackTrace();
+		}
+		
+        try {
+        	IPath picturesPath = new Path(projectName+"/pics");
+            IFolder picturesFolder = ResourcesPlugin.getWorkspace().getRoot().getFolder(picturesPath);
+            if(!picturesFolder.exists()) {
+            	throw new ModelFormatException(0,projectName+"的图片应该存放在pics文件夹中。");
+            }
+            // new class to check the picturesFolder
+            PicturesChecker pc = new PicturesChecker(picturesFolder);
+			pc.check();
+		} catch (PictureNamingException | ModelFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
-        final Job job = new FinishJob("Creating M2Doc project: " + projectName, projectName, templateName);
+        final Job job = new FinishJob("正在进行文档生成：" + projectName, projectName, templateName);
         job.setRule(ResourcesPlugin.getWorkspace().getRoot());
         job.schedule();
         return true;
