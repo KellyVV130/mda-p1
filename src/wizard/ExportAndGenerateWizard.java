@@ -3,11 +3,13 @@ package wizard;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
@@ -36,6 +38,8 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.URIConverter;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.jface.dialogs.ProgressMonitorDialog;
+import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.swt.SWT;
@@ -316,13 +320,31 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         @Override
         public IStatus runInWorkspace(IProgressMonitor monitor) {
             Status status = new Status(IStatus.OK, M2docconfEditorPlugin.getPlugin().getSymbolicName(),
-                    "M2Doc工程" + projectName + "成功创建。");
+                    projectName + "文档生成成功。");
             
             try {
+        		monitor.beginTask(projectName+"文档生成：", 1);
         		ResourceSet resourceSet = new ResourceSetImpl();
         		resourceSet.createResource(umlFileUri);
         		Resource r = resourceSet.getResource(umlFileUri, true);
+        		
+        		monitor.subTask("检查模型结构"); // TODO 有进度条却没有进度
+				checker = new UMLModelChecker(resourceSet);
+				checker.check();
+				monitor.worked(1);
+				
+				monitor.subTask("检查图片命名");
+				IPath picturesPath = new Path(projectName+"/pics");
+                IFolder picturesFolder = ResourcesPlugin.getWorkspace().getRoot().getFolder(picturesPath);
+                if(!picturesFolder.exists()) {
+                	throw new ModelFormatException(0,projectName+"的图片应该存放在pics文件夹中。");
+                }
+                PicturesChecker pc = new PicturesChecker(picturesFolder);
+    			pc.check();
+    			monitor.worked(1);
                 
+
+        		monitor.subTask(templateName+"目标文档生成");
     			this.variableValue = ((Model) r.getContents().get(0));
             	final IContainer container;
                 IPath containerFullPath=new Path(projectName+"/temp"); // TODO temp
@@ -373,17 +395,19 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                     } else {
                     	// TODO method to modify the generated documents.
                     	// fixGeneratedDocument(generatedUris.get(0));
-                    	Boolean flag = moveAndDeleteTemp(generatedUris, containerFullPath);
-                    	if(!flag) {
-                    		throw new DocumentGenerationException("模板文件验证失败，请检查模板文件。");
-                    	}
+//                    	Boolean flag = moveAndDeleteTemp(generatedUris, containerFullPath);
+//                    	if(!flag) {
+//                    		throw new DocumentGenerationException("模板文件验证失败，请检查模板文件。");
+//                    	}
                     }
-                 // refresh workspace
-            	ResourcesPlugin.getWorkspace().getRoot().getProject(this.projectName)
-            	.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+	                // refresh workspace
+	            	ResourcesPlugin.getWorkspace().getRoot().getProject(this.projectName)
+	            	.refreshLocal(IResource.DEPTH_INFINITE, monitor);
                 }
+                monitor.worked(1);
+                monitor.done();
             } catch (IOException | DocumentGenerationException | DocumentParserException 
-            		| CoreException e) {
+            		| CoreException | ModelFormatException | PictureNamingException e) {
             	// TODO delete temp folder
                 status = new Status(IStatus.ERROR, Activator.PLUGIN_ID,
                         e.getMessage(), e);
@@ -495,15 +519,13 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 		final String projectName = file.getParent().getName();
         final String templateName = templatePage.getTemplateName();
         
-        
-		try {
+		/*try {
 			ResourceSet resourceSet = new ResourceSetImpl();
 			resourceSet.createResource(umlFileUri);
 			resourceSet.getResource(umlFileUri, true);
 	        checker = new UMLModelChecker(resourceSet);
 			checker.check();
 		} catch (ModelFormatException e) {
-			// TODO Auto-generated catch block, should be status message or such.
 			e.printStackTrace();
 		}
 		
@@ -519,11 +541,11 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
 		} catch (PictureNamingException | ModelFormatException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}*/
 
-        final Job job = new FinishJob("正在进行文档生成：" + projectName, projectName, templateName);
-        job.setRule(ResourcesPlugin.getWorkspace().getRoot());
-        job.schedule();
+        final Job job_doc = new FinishJob(projectName + "文档生成任务", projectName, templateName);
+        job_doc.setRule(ResourcesPlugin.getWorkspace().getRoot());
+        job_doc.schedule();
         return true;
 	}
 

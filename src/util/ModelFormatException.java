@@ -28,7 +28,7 @@ public class ModelFormatException extends Exception {
 	
 	@Override
 	public String getMessage() {
-		return position+"_"+super.getMessage();
+		return super.getMessage();
 		
 	}
 
