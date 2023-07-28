@@ -46,7 +46,7 @@ public class UMLModelChecker {
 	private Model r = null;
 	//	private List<String> errorList;
 	private List<String> firstLevelPackageRules;
-	private List<String> requirementPackageRules;
+	// private List<String> requirementPackageRules;
 	
 	/**
 	 * constructor
@@ -57,7 +57,7 @@ public class UMLModelChecker {
 		this.rs = resource;
 //		this.errorList = new ArrayList<String>();
 		this.firstLevelPackageRules = setFirstLevelPackageRules();
-		this.requirementPackageRules = setrequirementPackageRules();
+		// this.requirementPackageRules = setrequirementPackageRules();
 		return;
 	}
 	
@@ -197,29 +197,29 @@ public class UMLModelChecker {
 //				"There must be 4 packages named 'Requirements', 'Behaviors', 'Types', 'Structure'
 //		at the first level under the Model. Cannot find some of them.");
 		ConstraintNameMap.put("RequirementPackageExists", 
-				"Couldn't find the 'Requirements' package, please check if it is of the right name.");
+				"找不到Requirements包，请检查是否命名错误。");
 		ConstraintNameMap.put("PerformanceRequirementConstraint", 
-				"Couldn't find the PerformanceRequirement element in 'Requirements' package, please check if it is of the right name.");
+				"找不到Requirements包中的PerformanceRequirement元素，请检查是否命名错误。");
 		ConstraintNameMap.put("StructurePackageExists", 
-				"Couldn't find the 'Structure' package, please check if it is of the right name.");
+				"找不到Structure包，请检查是否命名错误。");
 		ConstraintNameMap.put("StructureNoPackage", 
-				"There shouldn't be any packages in 'Structure' package.");
+				"Structure包中不应该有任何包。");
 		ConstraintNameMap.put("TwoLayerOfBlock", 
-				"There should be two layers of Block at most.");
+				"最多两层Block。");
 		ConstraintNameMap.put("BehaviorsPackageExists", 
-				"Couldn't find the 'Behaviors' package, please check if it is of the right name.");
+				"找不到Behaviors包，请检查是否命名错误。");
 		ConstraintNameMap.put("ExternalInterfacesExists", 
-				"Couldn't find the ExternalInterfaces package in 'Behaviors' package, please check if it is of the right name.");
+				"找不到Behaviors包中的ExternalInterfaces包，请检查是否命名错误。");
 		ConstraintNameMap.put("BehaviorsPackageConstraint", 
-				"The 'Behaviors' pakcage should at least contain one package and no non-package elements.");
+				"Behaviors包应至少包含一个包，并且不包含非包元素。");
 		ConstraintNameMap.put("TypesPackageExists", 
-				"Couldn't find the 'Types' package, please check if it is of the right name.");
+				"找不到Types包，请检查是否命名错误。");
 		ConstraintNameMap.put("TypesPackageConstraint", 
-				"There should at least be 1 DataType element and none package elements in 'Types' package.");
+				"Types包应至少包含一个DataType元素，并且不包含非包元素。");
 		ConstraintNameMap.put("ConstantsPackageExists", 
-				"Couldn't find the 'Constants' package, please check if it is of the right name.");
+				"找不到Constants包，请检查是否命名错误。");
 		ConstraintNameMap.put("ConstantsPackageConstraint", 
-				"There should at least be 1 DataType element and none package elements in 'Constants' package.");
+				"Constants包应至少包含一个DataType元素，并且不包含非包元素。");
 		
 		CompleteOCLStandaloneSetup.doSetup();
 		
@@ -260,14 +260,14 @@ public class UMLModelChecker {
 					}
 			    }
 		    } else {
-		    	throw new ModelFormatException(0, "Read the uml file fail! Maybe it doesn't exist.");
+		    	throw new ModelFormatException(0, "读取UML文件失败，它可能不存在。");
 		    }
 		    
 		    
 				    
 		} catch (ParserException | URISyntaxException | IOException e) {
 			ocl.dispose();
-			throw new ModelFormatException(0, "Compling ocl file fail!");
+			throw new ModelFormatException(0, "编译OCL文件失败。");
 		}
 		
 		return false;

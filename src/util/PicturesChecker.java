@@ -2,6 +2,8 @@ package util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -39,11 +41,6 @@ public class PicturesChecker {
 	 * the dot.
 	 */
 	private String DOT = ".";
-	
-	/**
-	 * the underscore.
-	 */
-	private String UNDERSCORE="_";
 	
 	/**
 	 * the constructor
@@ -90,8 +87,8 @@ public class PicturesChecker {
 		for(IFile f:this.pictures) {
 			if(f.getLocation().toFile().isFile()) {
 				if(!f.getFileExtension().equals(PIC_EXTENSION)) {// TODO or upper case? test
-					throw new PictureNamingException("wrong picture file extension: "+
-				f.getFileExtension()+", should be "+PIC_EXTENSION+" .");
+					throw new PictureNamingException("错误图片格式："+
+				f.getFileExtension()+"，应为"+PIC_EXTENSION+"。");
 				}else {
 					pictureNames.add(f.getLocation().removeFileExtension().lastSegment());
 				}
@@ -108,9 +105,19 @@ public class PicturesChecker {
 	private boolean checkPrefix() throws PictureNamingException {
 		for(String s:pictureNames) {
 			// regex get prefix of s
-			String pre = s.split(UNDERSCORE)[0];
-			if(!pre.equals(s)&&!prefixes.contains(pre)) {
-				throw new PictureNamingException("the picture file has illegal prefix "+pre+" .");
+			String pattern = "^([\\u4e00-\\u9fa5|\\d|a-zA-Z]+)_[\\u4e00-\\u9fa5|\\d|a-zA-Z]+$";
+	        Pattern r = Pattern.compile(pattern);
+	        Matcher m = r.matcher(s);
+			String pre = "";
+	        if(m.find()) {
+	        	pre = m.group(1);
+	        }
+			if(pre.length()==0) {
+				throw new PictureNamingException("图片命名格式不合法:"+s
+						+"，应为<图片种类缩写>_<图片描述的元素名称>。");
+			}
+			else if(!prefixes.contains(pre)) {
+				throw new PictureNamingException("图片前缀不合法："+pre+"。");
 			}
 		}
 		return true;
@@ -126,7 +133,7 @@ public class PicturesChecker {
 		if(this.pictureNames.contains(DName)) {
 			return true;
 		} else {
-			throw new PictureNamingException("missing picture or wrong name: "+DName+DOT+PIC_EXTENSION+".");
+			throw new PictureNamingException("缺少该图片或命名错误："+DName+DOT+PIC_EXTENSION+"。");
 		}
 	}
 	
@@ -137,7 +144,7 @@ public class PicturesChecker {
 	 */
 	public boolean check() throws PictureNamingException {
 		if(checkFileFormat()) { 
-			// checkPrefix();
+			checkPrefix();
 			checkDiagramByName("req_Requirements");
 			checkDiagramByName("bdd_ExternalInterfaces");
 			checkDiagramByName("bdd_ModelStructure");

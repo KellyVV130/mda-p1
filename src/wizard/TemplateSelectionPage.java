@@ -15,27 +15,17 @@ import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
 import org.obeonetwork.m2doc.services.TemplateRegistry;
-
-import plugin.Activator;
 
 public class TemplateSelectionPage extends WizardPage {
 	
 	private URI selectedTemplateURI;
-	private String fileExtension;
 	private String fileName;
 
 	protected TemplateSelectionPage(String pageName, String fileExtension) {
 		super(pageName);
-		this.fileExtension = fileExtension;
 	}
 	
 	/**
