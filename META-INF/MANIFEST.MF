@@ -3,6 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: DocGenerator4UML
 Bundle-SymbolicName: DocGenerator4UML;singleton:=true
 Bundle-Version: 1.0.0.qualifier
+Import-Package: org.eclipse.acceleo.query.runtime
 Bundle-Activator: plugin.Activator
 Require-Bundle: org.eclipse.core.runtime,
  org.obeonetwork.m2doc.genconf;bundle-version="3.2.2",

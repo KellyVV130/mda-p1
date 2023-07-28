@@ -3,14 +3,15 @@ package wizard;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-
+import java.util.Map;
+import org.eclipse.acceleo.query.runtime.IQueryEnvironment;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -38,8 +39,7 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.URIConverter;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.eclipse.jface.dialogs.ProgressMonitorDialog;
-import org.eclipse.jface.operation.IRunnableWithProgress;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.swt.SWT;
@@ -58,6 +58,8 @@ import org.obeonetwork.m2doc.generator.DocumentGenerationException;
 import org.obeonetwork.m2doc.ide.M2DocPlugin;
 import org.obeonetwork.m2doc.parser.DocumentParserException;
 import org.obeonetwork.m2doc.services.TemplateRegistry;
+import org.obeonetwork.m2doc.template.DocumentTemplate;
+import org.obeonetwork.m2doc.util.IClassProvider;
 import org.obeonetwork.m2doc.util.M2DocUtils;
 import org.osgi.framework.Bundle;
 import plugin.Activator;
@@ -203,6 +205,8 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         private final String DOT=".";
         
         private final String RESULT_FOLDER = "/docs/";
+        
+        private final String tName;
 
 		/**
          * Constructor.
@@ -224,7 +228,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
             IPath modelPath = new Path(CommonPlugin.resolve(umlFileUri).toFileString());
             modelPath=modelPath.removeLastSegments(1);
             modelURI = URI.createPlatformResourceURI(this.projectName+FOLDER_NAME, true);
-            String tName = new Path(this.templateName).removeFileExtension().lastSegment();
+            this.tName = new Path(this.templateName).removeFileExtension().lastSegment();
             
             this.genconfURI = URI.createPlatformResourceURI(URI.createURI(modelURI.toPlatformString(true)+ 
             		tName + DOT + GenconfUtils.GENCONF_EXTENSION_FILE).path(),true);
@@ -233,6 +237,16 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
             this.validationURI = URI.createPlatformResourceURI(URI.createURI(modelURI.toPlatformString(true)+ 
             		tName + "-validation." + M2DocUtils.DOCX_EXTENSION_FILE).resolve(modelURI).path(),true);
         }
+        
+        private void syncWithUI(String title, String message) {
+    		Display.getDefault().asyncExec(new Runnable() {
+    			public void run() {
+    				MessageDialog.openInformation(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), 
+    						title,
+    						message);
+    			}
+    		});
+    	}
         
 
         /*private boolean fixGeneratedDocument(URI uri) throws FileNotFoundException, IOException {
@@ -278,7 +292,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                 	File wordFile = filePath.toFile();
 
                 	String resultString = new Path(wordFile.getAbsolutePath()).removeLastSegments(2).append(RESULT_FOLDER).toString();
-                	String tName = new Path(this.templateName).removeFileExtension().lastSegment();
+                	
                 	File resFullName = new File(resultString+wordFile.getName());
                 	if(resFullName.exists()) {
                 		resFullName.delete();
@@ -306,6 +320,17 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         		}
         	}
         	
+        	deleteDir(containerFullPath) ;
+        	return true;
+        }
+        
+        /**
+         * Delete the directory and its inner files. Only one layer.
+         * @param containerFullPath - The path for the directory.
+         * @return true - if deleted successfully.
+         * @return false - if something wrong happens.
+         */
+        private Boolean deleteDir(IPath containerFullPath) {
         	File containerFolder = ResourcesPlugin.getWorkspace().getRoot()
         			.getFile(new Path(containerFullPath.toString())).getLocation().toFile();
         	if(containerFolder.exists()&&containerFolder.isDirectory()) {
@@ -313,17 +338,17 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
             		f.delete();
             	}
         	}
-        	containerFolder.delete(); 
-        	return true;
+        	return containerFolder.delete();
         }
 
         @Override
         public IStatus runInWorkspace(IProgressMonitor monitor) {
             Status status = new Status(IStatus.OK, M2docconfEditorPlugin.getPlugin().getSymbolicName(),
                     projectName + "文档生成成功。");
+            IPath containerFullPath=null;
             
             try {
-        		monitor.beginTask(projectName+"文档生成：", 1);
+        		monitor.beginTask(projectName+"文档生成", 1);
         		ResourceSet resourceSet = new ResourceSetImpl();
         		resourceSet.createResource(umlFileUri);
         		Resource r = resourceSet.getResource(umlFileUri, true);
@@ -331,6 +356,7 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
         		monitor.subTask("检查模型结构"); // TODO 有进度条却没有进度
 				checker = new UMLModelChecker(resourceSet);
 				checker.check();
+				syncWithUI("模型格式检查成功","模型格式检查成功！");
 				monitor.worked(1);
 				
 				monitor.subTask("检查图片命名");
@@ -341,13 +367,15 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                 }
                 PicturesChecker pc = new PicturesChecker(picturesFolder);
     			pc.check();
+				syncWithUI("图片命名检查成功","图片命名检查成功！");
     			monitor.worked(1);
                 
 
-        		monitor.subTask(templateName+"目标文档生成");
+        		monitor.subTask(tName+"目标文档生成");
     			this.variableValue = ((Model) r.getContents().get(0));
             	final IContainer container;
-                IPath containerFullPath=new Path(projectName+"/temp"); // TODO temp
+                containerFullPath=new Path(projectName+"/temp"); 
+
                 if (containerFullPath.segmentCount() == 1) {
                     container = ResourcesPlugin.getWorkspace().getRoot().getProject(containerFullPath.lastSegment());
                 } else {
@@ -384,6 +412,29 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                             "模板文件路径错误。");
                 }
                 
+                
+             // can be empty, if you are using a Generation use GenconfUtils.getOptions(generation)
+            /*  final Map<String, String> options = new HashMap<String, String>();
+             List<Exception> exceptions = new ArrayList<>();
+             final Map<String, Object> variablesMap = new HashMap<String, Object>();
+                     
+             final ResourceSet resourceSetForModels = M2DocUtils.createResourceSetForModels(exceptions , r, new ResourceSetImpl(), options);
+             resourceSetForModels.createResource(umlFileUri);
+             resourceSetForModels.getResource(umlFileUri, true);
+
+             // if you are using a Generation use GenconfUtils.getQueryEnvironment(resourceSetForModels, generation)
+             final IQueryEnvironment queryEnv = M2DocUtils.getQueryEnvironment(resourceSetForModels, templateURI, options); // delegate to IServicesConfigurator
+                     
+             final IClassProvider classProvider = M2DocPlugin.getClassProvider(); // use M2DocPlugin.getClassProvider() when running inside Eclipse
+             try (DocumentTemplate template = M2DocUtils.parse(resourceSetForModels.getURIConverter(), templateURI, queryEnv, classProvider, BasicMonitor.toMonitor(monitor))) {
+                 // use the template
+            	 variablesMap.put(variableName, variableValue);
+            	 M2DocUtils.generate(template, queryEnv, variablesMap, resourceSet, destinationURI,true, BasicMonitor.toMonitor(monitor));
+             } finally {
+                 M2DocUtils.cleanResourceSetForModels(r, resourceSetForModels);
+             }*/
+                
+                
                 // do these things in the container.
                 final Generation generation = createGenconf(genconfURI, destinationURI, validationURI, templateURI,
                         variableName, this.variableValue);
@@ -395,20 +446,21 @@ public class ExportAndGenerateWizard extends Wizard implements IExportWizard {
                     } else {
                     	// TODO method to modify the generated documents.
                     	// fixGeneratedDocument(generatedUris.get(0));
-//                    	Boolean flag = moveAndDeleteTemp(generatedUris, containerFullPath);
-//                    	if(!flag) {
-//                    		throw new DocumentGenerationException("模板文件验证失败，请检查模板文件。");
-//                    	}
+                    	Boolean flag = moveAndDeleteTemp(generatedUris, containerFullPath);
+                    	if(!flag) {
+                    		throw new DocumentGenerationException("模板文件验证失败，请检查模板文件。");
+                    	}
                     }
 	                // refresh workspace
 	            	ResourcesPlugin.getWorkspace().getRoot().getProject(this.projectName)
 	            	.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+					syncWithUI("文档生成成功",tName+"生成成功！");
                 }
                 monitor.worked(1);
                 monitor.done();
             } catch (IOException | DocumentGenerationException | DocumentParserException 
             		| CoreException | ModelFormatException | PictureNamingException e) {
-            	// TODO delete temp folder
+            	deleteDir(containerFullPath);
                 status = new Status(IStatus.ERROR, Activator.PLUGIN_ID,
                         e.getMessage(), e);
             }
